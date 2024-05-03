@@ -10,38 +10,46 @@ from Vehicle_Detection.vehicle_count import VehicleDetection
 defaultGreen = {0:10, 1:10, 2:10, 3:10}
 defaultRed = 150
 defaultYellow = 5
-
-detector = VehicleDetection()
-
-count_dict = detector.process_all_images()  # Get the count dictionary 
-count_dictKeys=list(count_dict.keys()) #extract keys of count_dict
+count_dict={}
+count_dictKeys=[]
 orgPos={}
-#assign original position
-for i in range(0,len(count_dictKeys)):
-    orgPos[count_dictKeys[i]]=i
-#sorting in descending order of traffic density
-sorted_keys = sorted(count_dict, key=count_dict.get, reverse=True)
-sorted_values = sorted(count_dict.values(), reverse=True)
-
-#containing values from orgPos corresponding to elements in sorted_keya
-signal_order = [orgPos[element] for element in sorted_keys]
-
-print(signal_order)
-density = sorted(count_dict.values(), reverse=True)
-
-for i in range(len(signal_order)):
-    if(sorted_values[i]>20):
-        defaultGreen.update({signal_order[i]:20})
-    elif(sorted_values[i]<20):
-        defaultGreen.update({signal_order[i]:5})
-
-
+signal_order=[]
+currentGreen=0
+nextGreen=0
+currentYellow = 0
 signals = []
 current_signal_index=0
-# Indicates which signal is green currently
-currentGreen = signal_order[current_signal_index]
-nextGreen = signal_order[(current_signal_index + 1) % len(signal_order)]    # Indicates which signal will turn green next
-currentYellow = 0   # Indicates whether yellow signal is on or off 
+temp=""
+def order_list():
+    global currentGreen, currentYellow, nextGreen,signal_order,current_signal_index,temp
+    detector = VehicleDetection()
+    count_dict = detector.process_all_images()  # Get the count dictionary 
+    if temp!="":
+        del count_dict[temp]
+    count_dictKeys=list(count_dict.keys()) #extract keys of count_dict
+    #assign original position
+    for i in range(0,len(count_dictKeys)):
+        orgPos[count_dictKeys[i]]=i
+    #sorting in descending order of traffic density
+    sorted_keys = sorted(count_dict, key=count_dict.get, reverse=True)
+    temp=sorted_keys[0]
+    sorted_values = sorted(count_dict.values(), reverse=True)
+
+    #containing values from orgPos corresponding to elements in sorted_keys
+    signal_order = [orgPos[element] for element in sorted_keys]
+    print(signal_order)
+    density = sorted(count_dict.values(), reverse=True)
+
+    for i in range(len(signal_order)):
+        if(sorted_values[i]>20):
+            defaultGreen.update({signal_order[i]:20})
+        elif(sorted_values[i]<20):
+            defaultGreen.update({signal_order[i]:5})
+
+    # Indicates which signal is green currently
+    currentGreen = signal_order[current_signal_index]
+    nextGreen = signal_order[(current_signal_index + 1) % len(signal_order)]    # Indicates which signal will turn green next
+    currentYellow = 0   # Indicates whether yellow signal is on or off 
 
 speeds = {'car':2.25, 'bus':1.8, 'truck':1.8, 'bike':2.5}  # average speeds of vehicles
 
@@ -162,6 +170,7 @@ def initialize():
 
     signals[a]=TrafficSignal(0, defaultYellow, defaultGreen[a])
     tsa = signals[a]
+    order_list()
     signals[b]=TrafficSignal(tsa.red+tsa.yellow+tsa.green, defaultYellow, defaultGreen[b])
     repeat()
 
@@ -184,7 +193,7 @@ def repeat():
     signals[currentGreen].green = defaultGreen[currentGreen]
     signals[currentGreen].yellow = defaultYellow
     signals[currentGreen].red = defaultRed
-       
+
     currentGreen = nextGreen # set next signal as green signal
     current_signal_index +=1
     nextGreen = signal_order[(current_signal_index + 1) % len(signal_order)]    # set next green signal
@@ -222,6 +231,7 @@ def generateVehicles():
         time.sleep(1)
 
 class Main:
+    order_list()
     thread1 = threading.Thread(name="initialization",target=initialize, args=())    # initialization
     thread1.daemon = True
     thread1.start()
