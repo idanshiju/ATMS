@@ -7,7 +7,7 @@ import sys
 from Vehicle_Detection.vehicle_count import VehicleDetection
 
 # Default values of signal timers
-defaultGreen = {0:10, 1:10, 2:10, 3:10}
+defaultGreen = {0:20, 1:20, 2:20, 3:20}
 defaultRed = 150
 defaultYellow = 5
 count_dict={}
@@ -19,20 +19,27 @@ nextGreen=0
 currentYellow = 0
 signals = []
 current_signal_index=0
-temp=""
+temp=-1
+order_list_executed = False  # Flag to indicate if order_list has been executed
+
 def order_list():
-    global currentGreen, currentYellow, nextGreen,signal_order,current_signal_index,temp
+    global currentGreen, currentYellow, nextGreen,signal_order,current_signal_index,temp,order_list_executed
+    temp=(temp+1)%4
     detector = VehicleDetection()
-    count_dict = detector.process_all_images()  # Get the count dictionary 
-    if temp!="":
-        del count_dict[temp]
+    if temp==0:
+        count_dict = {'img1': 45, 'img2': 30, 'img3': 20, 'img4': 10}  # Get the count dictionary 
+    elif temp==1:
+        count_dict = {'img1': 5, 'img2': 30, 'img3': 35, 'img4': 15}
+    elif temp==2:
+        count_dict = {'img1': 35, 'img2': 30, 'img3': 10, 'img4': 25}
+    elif temp==3:
+        count_dict = {'img1': 45, 'img2': 30, 'img3': 20, 'img4': 30}
     count_dictKeys=list(count_dict.keys()) #extract keys of count_dict
     #assign original position
-    for i in range(0,len(count_dictKeys)):
+    for i in range(temp,len(count_dictKeys)):
         orgPos[count_dictKeys[i]]=i
     #sorting in descending order of traffic density
     sorted_keys = sorted(count_dict, key=count_dict.get, reverse=True)
-    temp=sorted_keys[0]
     sorted_values = sorted(count_dict.values(), reverse=True)
 
     #containing values from orgPos corresponding to elements in sorted_keys
@@ -40,11 +47,13 @@ def order_list():
     print(signal_order)
     density = sorted(count_dict.values(), reverse=True)
 
-    for i in range(len(signal_order)):
+    for i in range(temp,len(signal_order)):
         if(sorted_values[i]>20):
-            defaultGreen.update({signal_order[i]:20})
-        elif(sorted_values[i]<20):
+            defaultGreen.update({signal_order[i]:30})
+        elif(sorted_values[i]<5):
             defaultGreen.update({signal_order[i]:5})
+        elif(sorted_values[i]<15):
+            defaultGreen.update({signal_order[i]:18})
 
     # Indicates which signal is green currently
     currentGreen = signal_order[current_signal_index]
@@ -170,7 +179,6 @@ def initialize():
 
     signals[a]=TrafficSignal(0, defaultYellow, defaultGreen[a])
     tsa = signals[a]
-    order_list()
     signals[b]=TrafficSignal(tsa.red+tsa.yellow+tsa.green, defaultYellow, defaultGreen[b])
     repeat()
 
@@ -179,6 +187,10 @@ def repeat():
     while(signals[currentGreen].green>0):   # while the timer of current green signal is not zero
         updateValues()
         time.sleep(1)
+        if (signals[currentGreen].green==15):
+            # Start a new thread to execute order_list() while the timer continues
+            order_thread = threading.Thread(target=order_list)
+            order_thread.start()
     currentYellow = 1   # set yellow signal on
     # reset stop coordinates of lanes and vehicles 
     for i in range(0,3):

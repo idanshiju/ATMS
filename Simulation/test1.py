@@ -1,9 +1,14 @@
-orgPos={}
-count_dict = {'img1': 45, 'img2': 20, 'img3': 10, 'img4': 30}
+orgPos={'img1': 0, 'img2': 1, 'img3': 2, 'img4': 3}
+count_dict = {'img1': 20, 'img2': 6, 'img3': 45, 'img4': 15}
 count_dictKeys=list(count_dict.keys())
-for i in range(0,len(count_dictKeys)):
+i=1
+for i in range(1,len(count_dictKeys)):
         orgPos[count_dictKeys[i]]=i
-sorted_keys = sorted(count_dict, key=count_dict.get, reverse=True)
+first_element = list(count_dict.keys())[0]
+
+# Sort the keys based on values in descending order excluding the first element
+sorted_keys = [first_element] + sorted(count_dict.keys(), key=lambda x: (-count_dict[x], x))
+
 sorted_values = sorted(count_dict.values(), reverse=True)
 signal_order = [orgPos[element] for element in sorted_keys]
 print(orgPos)
