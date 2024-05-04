@@ -20,40 +20,39 @@ currentYellow = 0
 signals = []
 current_signal_index=0
 temp=-1
+index=[]
+sorted_values=[]
 order_list_executed = False  # Flag to indicate if order_list has been executed
 
 def order_list():
-    global currentGreen, currentYellow, nextGreen,signal_order,current_signal_index,temp,order_list_executed
+    global currentGreen, currentYellow, nextGreen,signal_order,current_signal_index,temp,order_list_executed,index
     temp=(temp+1)%4
     detector = VehicleDetection()
     if temp==0:
-        count_dict = {'img1': 45, 'img2': 30, 'img3': 20, 'img4': 10}  # Get the count dictionary 
-    elif temp==1:
-        count_dict = {'img1': 5, 'img2': 30, 'img3': 35, 'img4': 15}
-    elif temp==2:
-        count_dict = {'img1': 35, 'img2': 30, 'img3': 10, 'img4': 25}
-    elif temp==3:
-        count_dict = {'img1': 45, 'img2': 30, 'img3': 20, 'img4': 30}
-    count_dictKeys=list(count_dict.keys()) #extract keys of count_dict
+        index=[]
+    count_dict = detector.process_all_images()
+    count_dictKeys=list(count_dict.values()) #extract keys of count_dict
     #assign original position
-    for i in range(temp,len(count_dictKeys)):
+    for i in range(len(count_dictKeys)):
         orgPos[count_dictKeys[i]]=i
-    #sorting in descending order of traffic density
-    sorted_keys = sorted(count_dict, key=count_dict.get, reverse=True)
-    sorted_values = sorted(count_dict.values(), reverse=True)
-
-    #containing values from orgPos corresponding to elements in sorted_keys
-    signal_order = [orgPos[element] for element in sorted_keys]
+    # Convert dictionary values into a list
+    values_list = list(count_dict.values())
+    if temp!=0:
+        t=[values_list[i] for i in range(len(values_list)) if i not in index]
+    else:
+        t=values_list
+    sorted_values= sorted(t, reverse=True)
+    signal_order = [orgPos[element] for element in sorted_values]
+    signal_order=index+signal_order
+    # Find the maximum value
+    max_value = max(t)
+    # Find the index of the maximum value in the list
+    max_index = values_list.index(max_value)
+    index.append(max_index)
     print(signal_order)
-    density = sorted(count_dict.values(), reverse=True)
 
     for i in range(temp,len(signal_order)):
-        if(sorted_values[i]>20):
-            defaultGreen.update({signal_order[i]:30})
-        elif(sorted_values[i]<5):
-            defaultGreen.update({signal_order[i]:5})
-        elif(sorted_values[i]<15):
-            defaultGreen.update({signal_order[i]:18})
+            defaultGreen.update({signal_order[i]:((values_list[i]*5)//5)})
 
     # Indicates which signal is green currently
     currentGreen = signal_order[current_signal_index]
@@ -207,7 +206,7 @@ def repeat():
     signals[currentGreen].red = defaultRed
 
     currentGreen = nextGreen # set next signal as green signal
-    current_signal_index +=1
+    current_signal_index =(current_signal_index+1)%4
     nextGreen = signal_order[(current_signal_index + 1) % len(signal_order)]    # set next green signal
     signals[nextGreen].red = signals[currentGreen].yellow+signals[currentGreen].green    # set the red time of next to next signal as (yellow time + green time) of next signal
     repeat()  
