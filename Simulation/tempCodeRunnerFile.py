@@ -1,1 +1,5 @@
-{'img1': 5, 'img2': 30, 'img3': 35, 'img4': 15}
+import random
+import time
+import threading
+import pygame
+import sys

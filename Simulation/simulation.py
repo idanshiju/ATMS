@@ -25,22 +25,24 @@ sorted_values=[]
 order_list_executed = False  # Flag to indicate if order_list has been executed
 
 def order_list():
-    global currentGreen, currentYellow, nextGreen,signal_order,current_signal_index,temp,order_list_executed,index
+    global currentGreen, currentYellow, nextGreen,signal_order,current_signal_index,temp,order_list_executed,index,values_list,defaultGreen
     temp=(temp+1)%4
     detector = VehicleDetection()
     if temp==0:
         index=[]
     count_dict = detector.process_all_images()
-    count_dictKeys=list(count_dict.values()) #extract keys of count_dict
+    count_dictKeys=list(count_dict.values()) #extract values of count_dict
     #assign original position
     for i in range(len(count_dictKeys)):
         orgPos[count_dictKeys[i]]=i
     # Convert dictionary values into a list
     values_list = list(count_dict.values())
+    s=sorted(values_list,reverse=True)
     if temp!=0:
         t=[values_list[i] for i in range(len(values_list)) if i not in index]
     else:
         t=values_list
+    print(t)
     sorted_values= sorted(t, reverse=True)
     signal_order = [orgPos[element] for element in sorted_values]
     signal_order=index+signal_order
@@ -52,7 +54,8 @@ def order_list():
     print(signal_order)
 
     for i in range(temp,len(signal_order)):
-            defaultGreen.update({signal_order[i]:((values_list[i]*5)//5)})
+        defaultGreen.update({signal_order[i]:((s[i]*5)//5)})
+    print(defaultGreen)
 
     # Indicates which signal is green currently
     currentGreen = signal_order[current_signal_index]
@@ -174,11 +177,9 @@ def initialize():
     ts4 = TrafficSignal(defaultRed, defaultYellow, defaultGreen[3])
     signals.append(ts4)
 
-    #initializing based on signal_orer[]
-
     signals[a]=TrafficSignal(0, defaultYellow, defaultGreen[a])
     tsa = signals[a]
-    signals[b]=TrafficSignal(tsa.red+tsa.yellow+tsa.green, defaultYellow, defaultGreen[b])
+    signals[b]=TrafficSignal(tsa.red+tsa.yellow+defaultGreen[signal_order[0]], defaultYellow, defaultGreen[b])
     repeat()
 
 def repeat():

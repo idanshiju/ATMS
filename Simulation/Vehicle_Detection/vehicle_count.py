@@ -68,6 +68,7 @@ class VehicleDetection:
         return vehicle_counts
 
     def process_all_images(self):
+        
         images_folder = 'images/'
         count_dict = {}
 
